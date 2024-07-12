@@ -15,6 +15,12 @@ Board::Board() {
         Tile(ResourceType::WOOD, 9), Tile(ResourceType::BRICK, 10),
         Tile(ResourceType::WOOL, 11)
     };
+
+    // Example adjacency setup (ensure indices are within bounds)
+    if (tiles.size() >= 4) { // Ensure there are enough tiles
+        tiles[0].adjacentTiles = { &tiles[1], &tiles[2] };
+        tiles[1].adjacentTiles = { &tiles[0], &tiles[3] };
+    }
 }
 
 void Board::printBoard() const {

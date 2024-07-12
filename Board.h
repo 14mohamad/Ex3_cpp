@@ -2,7 +2,30 @@
 #define BOARD_H
 
 #include <vector>
-#include "Tile.h"
+#include <string>
+#include "ResourceType.h"
+
+class Tile {
+public:
+    ResourceType resourceType;
+    int number;
+    bool settled; // Add this member to track if the tile is settled
+    std::vector<Tile*> adjacentTiles;
+
+    Tile(ResourceType resource, int num) : resourceType(resource), number(num), settled(false) {}
+
+    std::string resourceToString() const {
+        switch (resourceType) {
+            case ResourceType::WOOD: return "Wood";
+            case ResourceType::BRICK: return "Brick";
+            case ResourceType::WOOL: return "Wool";
+            case ResourceType::GRAIN: return "Grain";
+            case ResourceType::IRON: return "Iron";
+            case ResourceType::NONE: return "Nothing";
+            default: return "Unknown";
+        }
+    }
+};
 
 class Board {
 public:
@@ -12,5 +35,4 @@ public:
     void printBoard() const;
 };
 
-
-#endif 
+#endif

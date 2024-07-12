@@ -96,7 +96,7 @@ void Player::addDevelopmentCard(DevelopmentCard* card) {
 }
 
 void Player::useDevelopmentCard(int index, std::vector<Player*>& allPlayers) {
-    if (index < developmentCards.size()) {
+    if (index < static_cast<int>(developmentCards.size())) {
         developmentCards[index]->use(*this, allPlayers);
         delete developmentCards[index];  // Assume one-time use cards, so delete after use
         developmentCards.erase(developmentCards.begin() + index);

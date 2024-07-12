@@ -20,9 +20,10 @@ class Tile {
 public:
     ResourceType resourceType;
     int number;
+    bool settled;
     std::vector<Tile*> adjacentTiles;
 
-    Tile(ResourceType resource, int num) : resourceType(resource), number(num) {}
+    Tile(ResourceType resource, int num) : resourceType(resource), number(num), settled(false) {}
 
     std::string resourceToString() const {
         switch (resourceType) {
@@ -42,10 +43,11 @@ class Player {
 public:
     int id;
     int victoryPoints;
+    int knightsPlayed;
     std::map<ResourceType, int> resources;
     std::vector<Tile*> settlements;
 
-    Player(int playerId) : id(playerId), victoryPoints(2) {
+    Player(int playerId) : id(playerId), victoryPoints(2), knightsPlayed(0) {
         resources = {
             {ResourceType::WOOD, 0},
             {ResourceType::BRICK, 0},
@@ -139,9 +141,10 @@ public:
             Tile(ResourceType::WOOL, 11), Tile(ResourceType::GRAIN, 12)
         };
         // Example adjacency setup
-        tiles[0].adjacentTiles = { &tiles[1], &tiles[2] };
-        tiles[1].adjacentTiles = { &tiles[0], &tiles[3] };
-        // Add other tile adjacencies as necessary
+        if (tiles.size() >= 4) { // Ensure there are enough tiles
+            tiles[0].adjacentTiles = { &tiles[1], &tiles[2] };
+            tiles[1].adjacentTiles = { &tiles[0], &tiles[3] };
+        }
     }
 };
 
@@ -155,8 +158,11 @@ public:
 
     void play() {
         std::srand(std::time(0));
+        const int maxTurns = 100;
         bool gameEnd = false;
-        while (!gameEnd) {
+        int currentTurn = 0;
+
+        while (currentTurn < maxTurns && !gameEnd) {
             for (auto& player : players) {
                 std::cout << "Turn for Player Started Player ID: " << player.id << " with Victory Points: " << player.victoryPoints << std::endl;
                 playerTurn(player);
@@ -167,6 +173,11 @@ public:
                     break;
                 }
             }
+            currentTurn++;
+        }
+
+        if (!gameEnd) {
+            std::cout << "No one won after " << maxTurns << " turns." << std::endl;
         }
     }
 

@@ -5,9 +5,8 @@
 #include <map>
 #include <vector>
 #include "ResourceType.h"
-#include "Tile.h"
+#include "Board.h" // To get the Tile class definition
 
-// Forward declare DevelopmentCard class
 class DevelopmentCard;
 
 class Player {
