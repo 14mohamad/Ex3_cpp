@@ -3,6 +3,8 @@
 #include <map>
 #include <cstdlib>
 #include <ctime>
+#include <cassert>
+#include <algorithm>
 
 // Enum for Resource Types
 enum class ResourceType {
@@ -14,17 +16,39 @@ enum class ResourceType {
     NONE // For desert
 };
 
-// Player Class
-class DevelopmentCard; // Forward declaration
+// Tile Class
+class Tile {
+public:
+    ResourceType resourceType;
+    int number;
+    bool settled;
+    std::vector<Tile*> adjacentTiles;
 
+    Tile(ResourceType resource, int num) : resourceType(resource), number(num), settled(false) {}
+
+    std::string resourceToString() const {
+        switch (resourceType) {
+            case ResourceType::WOOD: return "Wood";
+            case ResourceType::BRICK: return "Brick";
+            case ResourceType::WOOL: return "Wool";
+            case ResourceType::GRAIN: return "Grain";
+            case ResourceType::IRON: return "Iron";
+            case ResourceType::NONE: return "Nothing";
+            default: return "Unknown";
+        }
+    }
+};
+
+// Player Class
 class Player {
 public:
     int id;
     int victoryPoints;
+    int knightsPlayed;
     std::map<ResourceType, int> resources;
-    std::vector<DevelopmentCard*> developmentCards;
+    std::vector<Tile*> settlements;
 
-    Player(int playerId) : id(playerId), victoryPoints(2) {
+    Player(int playerId) : id(playerId), victoryPoints(2), knightsPlayed(0) {
         resources = {
             {ResourceType::WOOD, 0},
             {ResourceType::BRICK, 0},
@@ -38,258 +62,251 @@ public:
         resources[resource] += amount;
     }
 
-    bool canBuildSettlement() {
-        return resources[ResourceType::WOOD] >= 1 &&
-               resources[ResourceType::BRICK] >= 1 &&
-               resources[ResourceType::WOOL] >= 1 &&
-               resources[ResourceType::GRAIN] >= 1;
+    bool canBuildSettlement(const std::vector<Tile>& tiles) {
+        if (resources[ResourceType::WOOD] < 1 || resources[ResourceType::BRICK] < 1 ||
+            resources[ResourceType::WOOL] < 1 || resources[ResourceType::GRAIN] < 1) {
+            return false;
+        }
+        for (const auto& tile : tiles) {
+            for (const auto& adjacentTile : tile.adjacentTiles) {
+                if (adjacentTile->resourceType != ResourceType::NONE && std::find(settlements.begin(), settlements.end(), adjacentTile) == settlements.end()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
-    void buildSettlement() {
-        if (canBuildSettlement()) {
+    void buildSettlement(std::vector<Tile>& tiles) {
+        if (canBuildSettlement(tiles)) {
             resources[ResourceType::WOOD]--;
             resources[ResourceType::BRICK]--;
             resources[ResourceType::WOOL]--;
             resources[ResourceType::GRAIN]--;
             victoryPoints++;
-            std::cout << "Player " << id << " built a settlement. Total Victory Points: " << victoryPoints << std::endl;
+            for (auto& tile : tiles) {
+                for (auto& adjacentTile : tile.adjacentTiles) {
+                    if (adjacentTile->resourceType != ResourceType::NONE && std::find(settlements.begin(), settlements.end(), adjacentTile) == settlements.end()) {
+                        settlements.push_back(adjacentTile);
+                        std::cout << "Player " << id << " built a settlement on tile with resource: " << adjacentTile->resourceToString() << ". Total Victory Points: " << victoryPoints << std::endl;
+                        return;
+                    }
+                }
+            }
         } else {
             std::cout << "Player " << id << " cannot build a settlement." << std::endl;
         }
     }
-
-    bool canBuildRoad() {
-        return resources[ResourceType::WOOD] >= 1 &&
-               resources[ResourceType::BRICK] >= 1;
-    }
-
-    void buildRoad() {
-        if (canBuildRoad()) {
-            resources[ResourceType::WOOD]--;
-            resources[ResourceType::BRICK]--;
-            std::cout << "Player " << id << " built a road." << std::endl;
-        } else {
-            std::cout << "Player " << id << " cannot build a road." << std::endl;
-        }
-    }
-
-    bool canBuildCity() {
-        return resources[ResourceType::IRON] >= 3 &&
-               resources[ResourceType::GRAIN] >= 2;
-    }
-
-    void buildCity() {
-        if (canBuildCity()) {
-            resources[ResourceType::IRON] -= 3;
-            resources[ResourceType::GRAIN] -= 2;
-            victoryPoints += 2;
-            std::cout << "Player " << id << " built a city. Total Victory Points: " << victoryPoints << std::endl;
-        } else {
-            std::cout << "Player " << id << " cannot build a city." << std::endl;
-        }
-    }
-
-    bool canBuildDevCard() {
-        return resources[ResourceType::IRON] >= 1 &&
-               resources[ResourceType::WOOL] >= 1 &&
-               resources[ResourceType::GRAIN] >= 1;
-    }
-
-    void addDevelopmentCard(DevelopmentCard* card) {
-        developmentCards.push_back(card);
-    }
-
-    void useDevelopmentCard(int index, std::vector<Player*>& players);
 };
 
 // DevelopmentCard Class
 class DevelopmentCard {
 public:
-    virtual void use(Player& player, std::vector<Player*>& players) = 0;
+    virtual void use(Player& player) = 0;
     virtual ~DevelopmentCard() = default;
 };
 
 class ProgressCard : public DevelopmentCard {
 public:
-    void use(Player& player, std::vector<Player*>& players) override {
+    void use(Player& player) override {
         std::cout << "Player " << player.id << " used a Progress Card." << std::endl;
     }
 };
 
 class KnightCard : public DevelopmentCard {
 public:
-    void use(Player& player, std::vector<Player*>& players) override {
+    void use(Player& player) override {
         std::cout << "Player " << player.id << " used a Knight Card." << std::endl;
     }
 };
 
 class VictoryPointCard : public DevelopmentCard {
 public:
-    void use(Player& player, std::vector<Player*>& players) override {
+    void use(Player& player) override {
         player.victoryPoints++;
         std::cout << "Player " << player.id << " used a Victory Point Card. Total Victory Points: " << player.victoryPoints << std::endl;
     }
 };
 
-class RoadBuildingCard : public DevelopmentCard {
-public:
-    void use(Player& player, std::vector<Player*>& players) override {
-        std::cout << "Player " << player.id << " used a Road Building Card." << std::endl;
-    }
-};
-
-class YearOfPlentyCard : public DevelopmentCard {
-public:
-    void use(Player& player, std::vector<Player*>& players) override {
-        std::cout << "Player " << player.id << " used a Year of Plenty Card." << std::endl;
-    }
-};
-
-class MonopolyCard : public DevelopmentCard {
-public:
-    void use(Player& player, std::vector<Player*>& players) override {
-        std::cout << "Player " << player.id << " used a Monopoly Card." << std::endl;
-    }
-};
-
-void Player::useDevelopmentCard(int index, std::vector<Player*>& players) {
-    if (index < 0 || index >= static_cast<int>(developmentCards.size())) {
-        std::cout << "Invalid development card index." << std::endl;
-        return;
-    }
-    DevelopmentCard* card = developmentCards[index];
-    card->use(*this, players);
-    delete card;
-    developmentCards.erase(developmentCards.begin() + index);
-}
-
 // Board Class
 class Board {
 public:
-    std::vector<int> tiles;
+    std::vector<Tile> tiles;
+
+    Board() {
+        tiles = {
+            Tile(ResourceType::WOOD, 5), Tile(ResourceType::BRICK, 6),
+            Tile(ResourceType::WOOL, 8), Tile(ResourceType::GRAIN, 3),
+            Tile(ResourceType::IRON, 4), Tile(ResourceType::NONE, 7), // Desert
+            Tile(ResourceType::WOOD, 9), Tile(ResourceType::BRICK, 10),
+            Tile(ResourceType::WOOL, 11), Tile(ResourceType::GRAIN, 12)
+        };
+        // Example adjacency setup
+        if (tiles.size() >= 4) { // Ensure there are enough tiles
+            tiles[0].adjacentTiles = { &tiles[1], &tiles[2] };
+            tiles[1].adjacentTiles = { &tiles[0], &tiles[3] };
+        }
+    }
 };
 
 // Game Class
 class Game {
 public:
-    Game();
-    void play();
-
-private:
     std::vector<Player> players;
     Board board;
 
-    void playerTurn(Player& player);
-    int rollDice();
-    void gatherResources(int diceRoll);
-    std::string resourceToString(ResourceType resource);
-    DevelopmentCard* drawDevelopmentCard();
+    Game() : players({Player(1), Player(2), Player(3)}) {}
+
+    void play() {
+        std::srand(std::time(0));
+        const int maxTurns = 10;
+        bool gameEnd = false;
+        int currentTurn = 0;
+
+        while (currentTurn < maxTurns && !gameEnd) {
+            for (auto& player : players) {
+                std::cout << "Turn for Player Started Player ID: " << player.id << " with Victory Points: " << player.victoryPoints << std::endl;
+                playerTurn(player);
+                std::cout << "Turn for Player Ended Player ID: " << player.id << " with Victory Points: " << player.victoryPoints << std::endl;
+                if (player.victoryPoints >= 10) {
+                    gameEnd = true;
+                    std::cout << "Player " << player.id << " wins!" << std::endl;
+                    break;
+                }
+            }
+            currentTurn++;
+        }
+
+        if (!gameEnd) {
+            std::cout << "No one won after " << maxTurns << " turns." << std::endl;
+        }
+    }
+
+    void playerTurn(Player& player) {
+        std::cout << "Player " << player.id << "'s turn." << std::endl;
+        int diceRoll = rollDice();
+        std::cout << "Dice roll: " << diceRoll << std::endl;
+        gatherResources(player, diceRoll);
+        if (player.canBuildSettlement(board.tiles)) {
+            player.buildSettlement(board.tiles);
+        }
+    }
+
+    int rollDice() {
+        return (std::rand() % 6 + 1) + (std::rand() % 6 + 1);
+    }
+
+    void gatherResources(Player& player, int diceRoll) {
+        for (const auto& tile : board.tiles) {
+            if (tile.number == diceRoll) {
+                player.addResource(tile.resourceType, 1);
+                std::cout << "Player " << player.id << " receives 1 " << resourceToString(tile.resourceType) << std::endl;
+            }
+        }
+    }
+
+    std::string resourceToString(ResourceType resource) {
+        switch (resource) {
+            case ResourceType::WOOD: return "Wood";
+            case ResourceType::BRICK: return "Brick";
+            case ResourceType::WOOL: return "Wool";
+            case ResourceType::GRAIN: return "Grain";
+            case ResourceType::IRON: return "Iron";
+            case ResourceType::NONE: return "Nothing";
+            default: return "Unknown";
+        }
+    }
 };
 
-Game::Game() {
-    players = {Player(1), Player(2), Player(3)};
-    board.tiles = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+// Tests
+void testPlayerCanBuildSettlement() {
+    Player player(1); // Create a player for testing
+    std::vector<Tile> tiles = {
+        Tile(ResourceType::WOOD, 5), Tile(ResourceType::BRICK, 6),
+        Tile(ResourceType::WOOL, 8), Tile(ResourceType::GRAIN, 3),
+        Tile(ResourceType::IRON, 4), Tile(ResourceType::NONE, 7), // Desert
+        Tile(ResourceType::WOOD, 9), Tile(ResourceType::BRICK, 10),
+        Tile(ResourceType::WOOL, 11), Tile(ResourceType::GRAIN, 12)
+    };
+
+    // Simulate having enough resources to build a settlement
+    player.addResource(ResourceType::WOOD, 1);
+    player.addResource(ResourceType::BRICK, 1);
+    player.addResource(ResourceType::WOOL, 1);
+    player.addResource(ResourceType::GRAIN, 1);
+
+    assert(player.canBuildSettlement(tiles));
 }
 
-void Game::play() {
-    std::srand(std::time(0));
-    const int maxTurns = 10;
-    bool gameEnd = false;
-    int currentTurn = 0;
-    while (currentTurn < maxTurns && !gameEnd) {
-        for (auto& player : players) {
-            std::cout << "Turn for Player Started Player ID: " << player.id << " with Victory Points: " << player.victoryPoints << std::endl;
-            playerTurn(player);
-            std::cout << "Turn for Player Ended Player ID: " << player.id << " with Victory Points: " << player.victoryPoints << std::endl;
-            if (player.victoryPoints >= 10) {
-                gameEnd = true;
-                std::cout << "Player " << player.id << " wins!" << std::endl;
-                break;
-            }
-        }
-        currentTurn++;
-    }
+void testPlayerBuildSettlement() {
+    Player player(1); // Create a player for testing
+    std::vector<Tile> tiles = {
+        Tile(ResourceType::WOOD, 5), Tile(ResourceType::BRICK, 6),
+        Tile(ResourceType::WOOL, 8), Tile(ResourceType::GRAIN, 3),
+        Tile(ResourceType::IRON, 4), Tile(ResourceType::NONE, 7), // Desert
+        Tile(ResourceType::WOOD, 9), Tile(ResourceType::BRICK, 10),
+        Tile(ResourceType::WOOL, 11), Tile(ResourceType::GRAIN, 12)
+    };
 
-    if (!gameEnd) {
-        std::cout << "No one won after " << maxTurns << " turns per player." << std::endl;
-    }
+    // Simulate having enough resources to build a settlement
+    player.addResource(ResourceType::WOOD, 1);
+    player.addResource(ResourceType::BRICK, 1);
+    player.addResource(ResourceType::WOOL, 1);
+    player.addResource(ResourceType::GRAIN, 1);
+
+    // Build a settlement
+    player.buildSettlement(tiles);
+
+    // Assert that settlement is built and resources are deducted
+    assert(player.victoryPoints == 3); // Assuming initial points were 2
+    assert(player.resources[ResourceType::WOOD] == 0);
+    assert(player.resources[ResourceType::BRICK] == 0);
+    assert(player.resources[ResourceType::WOOL] == 0);
+    assert(player.resources[ResourceType::GRAIN] == 0);
 }
 
-void Game::playerTurn(Player& player) {
-    std::cout << "Player " << player.id << "'s turn." << std::endl;
+void testPlayerCannotBuildSettlement() {
+    Player player(1); // Create a player for testing
+    std::vector<Tile> tiles = {
+        Tile(ResourceType::WOOD, 5), Tile(ResourceType::BRICK, 6),
+        Tile(ResourceType::WOOL, 8), Tile(ResourceType::GRAIN, 3),
+        Tile(ResourceType::IRON, 4), Tile(ResourceType::NONE, 7), // Desert
+        Tile(ResourceType::WOOD, 9), Tile(ResourceType::BRICK, 10),
+        Tile(ResourceType::WOOL, 11), Tile(ResourceType::GRAIN, 12)
+    };
 
-    int diceRoll = rollDice();
-    std::cout << "Dice roll: " << diceRoll << std::endl;
+    // Simulate not having enough resources to build a settlement
+    player.addResource(ResourceType::WOOD, 0);
+    player.addResource(ResourceType::BRICK, 0);
+    player.addResource(ResourceType::WOOL, 0);
+    player.addResource(ResourceType::GRAIN, 0);
 
-    gatherResources(diceRoll);
-
-    if (player.canBuildSettlement()) {
-        player.buildSettlement();
-    }
-    if (player.canBuildRoad()) {
-        player.buildRoad();
-    }
-    if (player.canBuildCity()) {
-        player.buildCity();
-    }
-    if (player.canBuildDevCard()) {
-        DevelopmentCard* card = drawDevelopmentCard();
-        player.addDevelopmentCard(card);
-        std::cout << "Player " << player.id << " drew a development card." << std::endl;
-    }
-
-    if (!player.developmentCards.empty()) {
-        int cardIndex = 0; // Simplified, choose the first card for this example
-        std::vector<Player*> playerPointers;
-        for (auto& p : players) {
-            playerPointers.push_back(&p);
-        }
-        player.useDevelopmentCard(cardIndex, playerPointers);
-    }
+    assert(!player.canBuildSettlement(tiles));
 }
 
-int Game::rollDice() {
-    return (std::rand() % 6 + 1) + (std::rand() % 6 + 1);
+void testGameInitialization() {
+    Game game;
+
+    // Assert that game initializes with 3 players
+    assert(game.players.size() == 3);
+
+    // Assert that the board has 10 tiles
+    assert(game.board.tiles.size() == 10);
 }
 
-void Game::gatherResources(int diceRoll) {
-    for (auto& player : players) {
-        for (const auto& tileNumber : board.tiles) {
-            if (tileNumber == diceRoll) {
-                player.addResource(ResourceType::WOOD, 1); // Assuming wood for simplicity
-                std::cout << "Player " << player.id << " receives 1 " << resourceToString(ResourceType::WOOD) << std::endl;
-            }
-        }
-    }
+void runTests() {
+    testPlayerCanBuildSettlement();
+    testPlayerBuildSettlement();
+    testPlayerCannotBuildSettlement();
+    testGameInitialization();
+
+    std::cout << "All tests passed!" << std::endl;
 }
 
-std::string Game::resourceToString(ResourceType resource) {
-    switch (resource) {
-        case ResourceType::WOOD: return "Wood";
-        case ResourceType::BRICK: return "Brick";
-        case ResourceType::WOOL: return "Wool";
-        case ResourceType::GRAIN: return "Grain";
-        case ResourceType::IRON: return "Iron";
-        case ResourceType::NONE: return "Nothing";
-        default: return "Unknown";
-    }
-}
-
-DevelopmentCard* Game::drawDevelopmentCard() {
-    int cardType = (std::rand() % 5);
-    switch (cardType) {
-        case 0: return new KnightCard();
-        case 1: return new VictoryPointCard();
-        case 2: return new RoadBuildingCard();
-        case 3: return new YearOfPlentyCard();
-        case 4: return new MonopolyCard();
-        default: return nullptr;
-    }
-}
-
-// Main Function
 int main() {
     Game game;
-    game.play();
+    game.play(); // Simulate the game
+    runTests();  // Run the tests
+
     return 0;
 }
