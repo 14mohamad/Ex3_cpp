@@ -4,7 +4,7 @@ Here's the rewritten README for your Catan game project:
 
 ## Introduction
 
-This project is a C++ implementation of a simplified version of the popular board game "Catan." The game is designed for three players who trade, build, and compete to be the first to reach 10 victory points. The implementation features various classes to represent the game board, players, tiles, and development cards.
+This project is a C++ implementation of a simplified version of the popular board game "Catan." The game is designed for multiple players who trade, build, and compete to be the first to reach 10 victory points. The implementation features various classes to represent the game board, players, tiles, and development cards.
 
 ## Class and Method Descriptions
 
@@ -52,7 +52,7 @@ The `DevelopmentCard` class serves as an abstract base class for different types
 
 - **VictoryPointCard**
   - **`void use(Player& player, std::vector<Player*>& allPlayers)`**
-    - Awards the player one additional victory point.
+    - Inherits from DevelopmentCard and represents a card that grants a victory point to the player.
 
 ### Game Class
 
@@ -89,40 +89,31 @@ The `Game` class handles the overall gameplay, including player turns, resource 
 **Header File:** `Player.h`  
 **Source File:** `Player.cpp`
 
-The `Player` class represents a player in the game, managing their resources, development cards, and actions.
+The Player class represents a player in the game.
 
 #### Methods
 
-- **Constructor: `Player(int playerId)`**
-  - Initializes a player with a given ID, initial victory points, and an empty resource inventory.
-  
-- **`void addResource(ResourceType resource, int count)`**
-  - Adds a specified amount of a resource to the player's inventory.
-  
-- **`bool canBuildSettlement()`**
-  - Checks if the player has enough resources to build a settlement.
-  
-- **`void buildSettlement()`**
-  - Builds a settlement, deducting the necessary resources and adding a victory point.
-  
-- **`bool canBuildRoad()`**
-  - Checks if the player has enough resources to build a road.
-  
-- **`void buildRoad()`**
-  - Builds a road, deducting the necessary resources.
-  
-- **`bool canBuildCity()`**
-  - Checks if the player has enough resources to build a city.
-  
-- **`void buildCity()`**
-  - Builds a city, deducting the necessary resources and adding two victory points.
-  
-- **`bool canBuildDevCard()`**
-  - Checks if the player has enough resources to build a development card.
-  
+- **`Constructor: Player(std::string name)`**
+  - Initializes a player with a given name.
+
+- **`void gatherResources(ResourceType resource, int amount)`**
+  - Adds resources to the player's inventory.
+
+- **`bool buildRoad()`**
+  - Attempts to build a road, returning whether the player had enough resources to do so.
+
+- **`bool buildSettlement()`**
+  - Attempts to build a settlement, returning whether the player had enough resources to do so.
+
+- **`bool buildCity()`**
+  - Attempts to build a city, returning whether the player had enough resources to do so.
+
+- **`bool buildDevelopmentCard()`**
+  - Attempts to build a development card, returning whether the player had enough resources to build a development card.
+
 - **`void addDevelopmentCard(DevelopmentCard* card)`**
   - Adds a development card to the player's inventory.
-  
+
 - **`void useDevelopmentCard(int index, std::vector<Player*>& allPlayers)`**
   - Uses a development card from the player's inventory.
 
@@ -134,10 +125,8 @@ The `Player` class represents a player in the game, managing their resources, de
 
 ### Tile Class
 
-**Header File:** `Tile.h`  
-**Source File:** `Tile.cpp`
 
-The `Tile` class represents a single tile on the game board, holding a resource type and a number.
+The Tile class represents a single tile on the game board, holding a resource type and a number.
 
 #### Methods
 
@@ -149,33 +138,17 @@ The `Tile` class represents a single tile on the game board, holding a resource 
 
 ## Running the Game
 
-To run the game, compile the source files and execute the main program:
+To run the game :
 
 ```sh
-g++ main.cpp Game.cpp Board.cpp Player.cpp DevelopmentCard.cpp Tile.cpp -o catan
-./catan
+make catan
 ```
 
 To run tests:
 
 ```sh
-g++ -std=c++17 -o runTests Main.cpp TestPlayer.cpp Board.cpp DevelopmentCard.cpp Game.cpp Player.cpp Tile.cpp -I.
-./runtests
+make test_main
 ```
-
-Include the following in your `main.cpp`:
-
-```cpp
-#include "Game.h"
-
-int main() {
-    Game game;
-    game.play();
-    return 0;
-}
-```
-
-The game will simulate turns for three players, allowing them to gather resources, build, and use development cards until one player reaches 10 victory points and wins the game.
 
 ## Conclusion
 

@@ -2,7 +2,8 @@
 #include <iostream>
 
 Board::Board() {
-    // Initialize board with 19 tiles
+    // קונסטרוקטור המאתחל את הלוח עם 19 אריחים מוגדרים מראש המייצגים משאבים ומספרים שונים
+    // מגדיר סמיכות בין כמה אריחים כדוגמה
     tiles = {
         Tile(ResourceType::WOOD, 5), Tile(ResourceType::BRICK, 6),
         Tile(ResourceType::WOOL, 8), Tile(ResourceType::GRAIN, 3),
@@ -23,6 +24,7 @@ Board::Board() {
     }
 }
 
+// מדפיס את פריסת הלוח, כולל סוג המשאב והמספר של כל אריח
 void Board::printBoard() const {
     std::cout << "Board Layout:" << std::endl;
     for (const auto& tile : tiles) {

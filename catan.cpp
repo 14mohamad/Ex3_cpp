@@ -5,7 +5,7 @@
 #include <ctime>
 #include <algorithm>
 
-// Enum for Resource Types
+// מגדיר את סוגי המשאבים הזמינים במשחק
 enum class ResourceType {
     IRON,
     WOOD,
@@ -15,7 +15,7 @@ enum class ResourceType {
     NONE // For desert
 };
 
-// Tile Class
+// מייצגת אריח בודד על לוח המשחק, המכיל סוג משאב ומספר Tile המחלקה
 class Tile {
 public:
     ResourceType resourceType;
@@ -23,8 +23,10 @@ public:
     bool settled;
     std::vector<Tile*> adjacentTiles;
 
+    // קונסטרוקטור לאתחל אריח עם סוג ומספר משאבים נתונים
     Tile(ResourceType resource, int num) : resourceType(resource), number(num), settled(false) {}
 
+    // ממירה את סוג המשאב של האריח לייצוג המחרוזת שלו
     std::string resourceToString() const {
         switch (resourceType) {
             case ResourceType::WOOD: return "Wood";
@@ -47,6 +49,7 @@ public:
     std::map<ResourceType, int> resources;
     std::vector<Tile*> settlements;
 
+    // בנאי כדי לאתחל שחקן עם מזהה נתון ולהגדיר משאבים ראשוניים ונקודות ניצחון
     Player(int playerId) : id(playerId), victoryPoints(2), knightsPlayed(0) {
         resources = {
             {ResourceType::WOOD, 0},
@@ -56,11 +59,11 @@ public:
             {ResourceType::IRON, 0}
         };
     }
-
+    // מוסיף את הכמות המצוינת של המשאב הנתון למשאבי הנגן
     void addResource(ResourceType resource, int amount) {
         resources[resource] += amount;
     }
-
+    // בודק אם השחקן יכול לבנות יישוב על המשבצות הנתונות
     bool canBuildSettlement(const std::vector<Tile>& tiles) {
         if (resources[ResourceType::WOOD] < 1 || resources[ResourceType::BRICK] < 1 ||
             resources[ResourceType::WOOL] < 1 || resources[ResourceType::GRAIN] < 1) {
@@ -75,7 +78,7 @@ public:
         }
         return false;
     }
-
+    // ניסיונות לבנות יישוב על האריחים הנתונים
     void buildSettlement(std::vector<Tile>& tiles) {
         if (canBuildSettlement(tiles)) {
             resources[ResourceType::WOOD]--;
@@ -99,12 +102,14 @@ public:
 };
 
 // DevelopmentCard Class
+// שיעור בסיס מופשט לכרטיסי פיתוח בשיטת שימוש וירטואלי טהור
 class DevelopmentCard {
 public:
     virtual void use(Player& player) = 0;
     virtual ~DevelopmentCard() = default;
 };
 
+// מיישם את שיטת השימוש להצגת הודעה בעת שימוש DevelopmentCard נגזר מ
 class ProgressCard : public DevelopmentCard {
 public:
     void use(Player& player) override {
@@ -112,6 +117,7 @@ public:
     }
 };
 
+// מיישם את שיטת השימוש כדי להציג הודעה בעת שימוש ולהגדיל את ספירת האבירים של השחקן DevelopmentCard נגזר מ
 class KnightCard : public DevelopmentCard {
 public:
     void use(Player& player) override {
@@ -119,6 +125,7 @@ public:
     }
 };
 
+// מיישם את שיטת השימוש כדי להגדיל את נקודות הניצחון של השחקן בעת ​​שימוש DevelopmentCard נגזר מ
 class VictoryPointCard : public DevelopmentCard {
 public:
     void use(Player& player) override {
@@ -153,9 +160,10 @@ class Game {
 public:
     std::vector<Player> players;
     Board board;
-
+    // קונסטרוקטור המאתחל את המשחק עם שלושה שחקנים ולוח
     Game() : players({Player(1), Player(2), Player(3)}) {}
 
+    // לולאת משחק ראשית המדמה תורות עבור כל שחקן עד ששחקן מנצח או הגעה למספר המרבי של תורות
     void play() {
         std::srand(std::time(0));
         const int maxTurns = 100;
@@ -181,6 +189,7 @@ public:
         }
     }
 
+    // מדמה תור לשחקן הנתון
     void playerTurn(Player& player) {
         std::cout << "Player " << player.id << "'s turn." << std::endl;
         int diceRoll = rollDice();
@@ -190,11 +199,11 @@ public:
             player.buildSettlement(board.tiles);
         }
     }
-
+    // מדמה הטלת שתי קוביות שש צדדיות
     int rollDice() {
         return (std::rand() % 6 + 1) + (std::rand() % 6 + 1);
     }
-
+    // מחלק משאבים לשחקנים על סמך הטלת הקוביות
     void gatherResources(int diceRoll) {
         for (auto& player : players) {
             for (const auto& tile : board.tiles) {
@@ -205,7 +214,7 @@ public:
             }
         }
     }
-
+    // ממירה סוג משאב לייצוג המחרוזת שלו
     std::string resourceToString(ResourceType resource) {
         switch (resource) {
             case ResourceType::WOOD: return "Wood";

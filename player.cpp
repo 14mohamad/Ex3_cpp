@@ -1,6 +1,7 @@
 #include "Player.h"
 #include "DevelopmentCard.h"  // Include the full definition of DevelopmentCard
 
+// קונסטרוקטור המאתחל שחקן עם מזהה נתון וקובע משאבים ראשוניים ונקודות ניצחון
 Player::Player(int playerId) : id(playerId), victoryPoints(2), knightsPlayed(0) {
     resources = {
         {ResourceType::WOOD, 0},
@@ -10,17 +11,18 @@ Player::Player(int playerId) : id(playerId), victoryPoints(2), knightsPlayed(0) 
         {ResourceType::IRON, 0}
     };
 }
-
+// מוסיף משאבים למלאי של השחקן
 void Player::addResource(ResourceType resource, int count) {
     resources[resource] += count;
 }
 
+// בודק אם השחקן יכול לבנות יישוב על האריחים הנתונים על ידי הבטחה שיש אריחים לא מסודרים סמוכים
 bool Player::canBuildSettlement(const std::vector<Tile>& tiles) {
-    // Implement logic to check if there are adjacent tiles where a settlement can be built
+    // יישם היגיון כדי לבדוק אם יש אריחים צמודים שבהם ניתן לבנות יישוב
     for (const auto& tile : tiles) {
         if (tile.settled == false) {
-            // Example logic: Check adjacent tiles
-            // For simplicity, let's assume `number` indicates position and adjacent tiles have consecutive numbers
+            // היגיון לדוגמה: בדוק אריחים סמוכים
+            // למען הפשטות, נניח ש'מספר' מציין את המיקום ולאריחים הסמוכים יש מספרים עוקבים
             for (const auto& neighbor : tiles) {
                 if (neighbor.number == tile.number + 1 || neighbor.number == tile.number - 1) {
                     if (neighbor.settled == false) {
@@ -33,6 +35,7 @@ bool Player::canBuildSettlement(const std::vector<Tile>& tiles) {
     return false; // No adjacent tile found where a settlement can be built
 }
 
+// מנסה לבנות יישוב על האריחים הנתונים ומפחית את המשאבים הדרושים מהמלאי של השחקן
 void Player::buildSettlement(std::vector<Tile>& tiles) {
     if (canBuildSettlement(tiles)) {
         for (auto& tile : tiles) {
@@ -58,10 +61,12 @@ void Player::buildSettlement(std::vector<Tile>& tiles) {
     }
 }
 
+// בודק אם לשחקן יש מספיק משאבים לבנות כביש
 bool Player::canBuildRoad() {
     return resources[ResourceType::WOOD] >= 1 && resources[ResourceType::BRICK] >= 1;
 }
 
+// מנסה לבנות כביש ומפחית את המשאבים הדרושים מהמלאי של השחקן
 void Player::buildRoad() {
     if (canBuildRoad()) {
         resources[ResourceType::WOOD]--;
@@ -72,10 +77,12 @@ void Player::buildRoad() {
     }
 }
 
+// בודק אם לשחקן יש מספיק משאבים לבנות עיר
 bool Player::canBuildCity() {
     return resources[ResourceType::IRON] >= 3 && resources[ResourceType::GRAIN] >= 2;
 }
 
+// מנסה לבנות עיר ומפחית את המשאבים הדרושים מהמלאי של השחקן
 void Player::buildCity() {
     if (canBuildCity()) {
         resources[ResourceType::IRON] -= 3;
@@ -87,14 +94,17 @@ void Player::buildCity() {
     }
 }
 
+// בודק אם לשחקן יש מספיק משאבים לבנות כרטיס פיתוח
 bool Player::canBuildDevCard() {
     return resources[ResourceType::IRON] >= 1 && resources[ResourceType::WOOL] >= 1 && resources[ResourceType::GRAIN] >= 1;
 }
 
+// מוסיף כרטיס פיתוח למלאי של השחקן
 void Player::addDevelopmentCard(DevelopmentCard* card) {
     developmentCards.push_back(card);
 }
 
+// משתמש בכרטיס פיתוח מהמלאי של השחקן באינדקס שצוין
 void Player::useDevelopmentCard(int index, std::vector<Player*>& allPlayers) {
     if (index < static_cast<int>(developmentCards.size())) {
         developmentCards[index]->use(*this, allPlayers);
@@ -105,6 +115,7 @@ void Player::useDevelopmentCard(int index, std::vector<Player*>& allPlayers) {
     }
 }
 
+// מקל על משאבי מסחר בין שחקנים
 bool Player::trade(Player& otherPlayer, ResourceType giveResource, ResourceType receiveResource, int amount) {
     std::cout << "Player " << id << " trading " << amount << " " << resourceToString(giveResource)
               << " for " << amount << " " << resourceToString(receiveResource) << " with Player " << otherPlayer.id << std::endl;
@@ -120,6 +131,7 @@ bool Player::trade(Player& otherPlayer, ResourceType giveResource, ResourceType 
     return false;
 }
 
+// ממירה סוג משאב לייצוג המחרוזת שלו
 std::string Player::resourceToString(ResourceType resource) {
     switch (resource) {
         case ResourceType::WOOD: return "Wood";
