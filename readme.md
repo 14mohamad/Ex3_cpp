@@ -1,6 +1,6 @@
 Here's the rewritten README for your Catan game project:
 
-# Catan Game README
+# Catan Game
 
 ## Introduction
 
